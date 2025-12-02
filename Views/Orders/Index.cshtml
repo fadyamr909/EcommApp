@@ -1,0 +1,78 @@
+@model IEnumerable<ECommerceApp.Models.Order>
+
+@{
+    ViewData["Title"] = "All Orders";
+}
+
+<div class="page-header">
+    <h1>All Orders</h1>
+    @if (Model != null && Model.Any())
+    {
+        <span class="count-badge">@Model.Count() orders</span>
+    }
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <span class="empty-state-icon">📭</span>
+        <p class="empty-state-text">No orders yet</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date & Time</th>
+                            <th>Items</th>
+                            <th>Total Amount</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model)
+                        {
+                            <tr>
+                                <td style="color: var(--primary); font-weight: 700;">#@order.Id</td>
+                                <td style="color: var(--foreground); font-size: 0.875rem;">
+                                    @order.CreatedAt.ToString("MMM dd, yyyy HH:mm:ss")
+                                </td>
+                                <td>
+                                    <span style="background-color: var(--primary-50); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">
+                                        @order.OrderItems.Sum(oi => oi.Quantity) items
+                                    </span>
+                                </td>
+                                <td style="font-size: 1.125rem; font-weight: 700; color: var(--emerald-600);">
+                                    @order.TotalAmount.ToString("C")
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="OrderSummary" asp-route-orderId="@order.Id" 
+                                       class="btn btn-link p-0" style="color: var(--primary);" aria-label="View order details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="font-weight: 700; color: var(--foreground);">
+                                Total Orders Value:
+                            </td>
+                            <td style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">
+                                @Model.Sum(o => o.TotalAmount).ToString("C")
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+

@@ -1,0 +1,140 @@
+@model IEnumerable<ECommerceApp.ViewModels.CartItemViewModel>
+
+@{
+    ViewData["Title"] = "Shopping Cart";
+    var total = ViewBag.Total as decimal? ?? 0m;
+    var taxAmount = total * 0.10m;
+    var totalWithTax = total + taxAmount;
+}
+
+<div class="page-header">
+    <h1>Shopping Cart</h1>
+    @if (Model != null && Model.Any())
+    {
+        <span class="count-badge">@Model.Count() items</span>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <span class="empty-state-icon">🛒</span>
+        <p class="empty-state-text">Your cart is empty</p>
+        <a asp-action="Index" class="btn btn-primary">
+            Continue Shopping
+        </a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 0.75rem 1.5rem;">Product</th>
+                                    <th style="padding: 0.75rem 1.5rem;">Price</th>
+                                    <th style="padding: 0.75rem 1.5rem;">Quantity</th>
+                                    <th style="padding: 0.75rem 1.5rem;">Subtotal</th>
+                                    <th class="text-center" style="padding: 0.75rem 1.5rem;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <div class="d-flex align-items-center gap-3">
+                                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                                {
+                                                    <div style="position: relative; width: 48px; height: 48px; background-color: var(--background); border-radius: var(--radius-md); overflow: hidden;">
+                                                        <img src="@item.ImageUrl" alt="@item.Name" style="width: 100%; height: 100%; object-fit: cover;">
+                                                    </div>
+                                                }
+                                                <span style="font-weight: 600; color: var(--foreground);">@item.Name</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; color: #2F429E;">@item.Price.ToString("C")</td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <form asp-action="UpdateCartItem" method="post" class="d-flex align-items-center gap-2" id="updateForm-@item.ProductId">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                                <input type="number" name="quantity" value="@item.Quantity" min="1" max="999" 
+                                                       class="form-control" style="width: 64px; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-md);" 
+                                                       onchange="document.getElementById('updateForm-@item.ProductId').submit();">
+                                            </form>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; font-weight: 700; color: var(--foreground);">
+                                            @item.Subtotal.ToString("C")
+                                        </td>
+                                        <td class="text-center" style="padding: 1rem 1.5rem;">
+                                            <form asp-action="RemoveFromCart" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                                <button type="submit" class="btn btn-link p-0" style="color: var(--destructive); transition: color 0.2s;" aria-label="Remove item">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="order-summary-card">
+                <div class="order-summary-header">
+                    <i class="bi bi-cart"></i>
+                    <h2 style="margin: 0; font-size: 1.125rem; font-weight: 700;">Order Summary</h2>
+                </div>
+                <div class="order-summary-body">
+                    <div class="order-summary-row">
+                        <span style="color: var(--muted-foreground);">Subtotal:</span>
+                        <span style="font-weight: 600; color: var(--foreground);">@total.ToString("C")</span>
+                    </div>
+                    <div class="order-summary-row">
+                        <span style="color: var(--muted-foreground);">Tax (10%):</span>
+                        <span style="font-weight: 600; color: var(--foreground);">@taxAmount.ToString("C")</span>
+                    </div>
+                    <div class="order-summary-total">
+                        <span class="order-summary-total-label">Total:</span>
+                        <span class="order-summary-total-amount">@totalWithTax.ToString("C")</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2 mt-4">
+                        <form asp-controller="Orders" asp-action="PlaceOrder" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-emerald w-100" style="padding: 0.75rem; font-weight: 700;">
+                                Place Order
+                            </button>
+                        </form>
+                        <a asp-action="Index" class="btn btn-outline-primary w-100 d-inline-flex align-items-center justify-content-center gap-2" style="padding: 0.75rem; font-weight: 700;">
+                            <i class="bi bi-arrow-left"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+

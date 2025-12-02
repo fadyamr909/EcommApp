@@ -1,0 +1,70 @@
+@model IEnumerable<ECommerceApp.Models.Product>
+
+@{
+    ViewData["Title"] = "Store";
+}
+
+<div class="page-header">
+    <h1>Our Products</h1>
+    @if (Model != null && Model.Any())
+    {
+        <span class="count-badge">@Model.Count() items</span>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success mb-4" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <span class="empty-state-icon">📭</span>
+        <p class="empty-state-text">No products available</p>
+    </div>
+}
+else
+{
+    <div class="product-grid">
+        @foreach (var product in Model)
+        {
+            <div class="product-card">
+                <div class="position-relative">
+                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                    {
+                        <img src="@product.ImageUrl" class="product-card-image" alt="@product.Name">
+                    }
+                    else
+                    {
+                        <div class="product-card-image d-flex align-items-center justify-content-center">
+                            <span style="font-size: 3rem;">📦</span>
+                        </div>
+                    }
+                    <span class="category-badge">@product.Category</span>
+                </div>
+                <div class="product-card-body">
+                    <h3 class="product-card-title">@product.Name</h3>
+                    <p class="product-card-description">@product.Description</p>
+                    <p class="product-card-price">@product.Price.ToString("C")</p>
+                    <div class="d-flex flex-column gap-2">
+                        <form asp-action="AddToCart" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="quantity" value="1" />
+                            <button type="submit" class="btn btn-emerald w-100">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                        <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
