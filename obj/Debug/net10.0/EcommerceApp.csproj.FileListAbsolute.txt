@@ -230,4 +230,7 @@ C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\refint\EcommerceApp.dll
 C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\EcommerceApp.pdb
 C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\EcommerceApp.genruntimeconfig.cache
 C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\ref\EcommerceApp.dll
-C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\compressed\3ztesqw9lz-{0}-i54n79ljfj-i54n79ljfj.gz
+C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\EcommerceApp.sourcelink.json
+C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\compressed\nmlhc0fdhk-{0}-swnzwed23z-swnzwed23z.gz
+C:\Users\Fady Amr\Desktop\EcommerceApp\obj\Debug\net10.0\compressed\3ztesqw9lz-{0}-ilgnxe3me9-ilgnxe3me9.gz
+C:\Users\Fady Amr\Desktop\EcommerceApp\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

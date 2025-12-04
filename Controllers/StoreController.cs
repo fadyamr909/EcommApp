@@ -19,9 +19,29 @@ namespace ECommerceApp.Controllers
         }
 
         // GET: Store
-        public IActionResult Index()
+        public IActionResult Index(string? category)
         {
-            var products = _context.Products.ToList();
+            // Get distinct categories for the filter UI
+            var categories = _context.Products
+                .Select(p => p.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            ViewBag.Categories = categories;
+            ViewBag.SelectedCategory = category;
+
+            // Base query
+            IQueryable<Product> query = _context.Products;
+
+            // Apply category filter if provided
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                var normalized = category.Trim().ToLower();
+                query = query.Where(p => p.Category.ToLower() == normalized);
+            }
+
+            var products = query.ToList();
             return View(products);
         }
 

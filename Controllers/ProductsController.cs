@@ -1,7 +1,9 @@
+
 using ECommerceApp.Data;
 using ECommerceApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 
 namespace ECommerceApp.Controllers
 {
@@ -166,21 +168,110 @@ namespace ECommerceApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product != null)
+            try
             {
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if product is referenced by any order items
+                var orderItemsCount = await _context.OrderItems
+                    .CountAsync(oi => oi.ProductId == id);
+                    
+                if (orderItemsCount > 0)
+                {
+                    TempData["ErrorMessage"] = $"Cannot delete product that is referenced in {orderItemsCount} existing order(s).";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Delete associated image file
                 if (!string.IsNullOrEmpty(product.ImageUrl))
                 {
-                    var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, product.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(imagePath))
+                    try
                     {
-                        System.IO.File.Delete(imagePath);
+                        var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, product.ImageUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore image deletion errors - continue with product deletion
                     }
                 }
 
                 _context.Products.Remove(product);
-                await _context.SaveChangesAsync();
+                var result = await _context.SaveChangesAsync();
+                
+                if (result > 0)
+                {
+                    TempData["SuccessMessage"] = "Product deleted successfully.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Product was not deleted. No changes were saved.";
+                }
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // Check all levels of inner exceptions for foreign key constraint
+                Exception? exception = dbEx;
+                bool isForeignKeyError = false;
+                
+                while (exception != null)
+                {
+                    var message = exception.Message;
+                    
+                    if (message.Contains("REFERENCE constraint") || 
+                        message.Contains("FOREIGN KEY") || 
+                        message.Contains("FK_OrderItems_Products_ProductId"))
+                    {
+                        isForeignKeyError = true;
+                        break;
+                    }
+                    
+                    if (exception is SqlException sqlEx)
+                    {
+                        if (sqlEx.Number == 547 || 
+                            sqlEx.Message.Contains("REFERENCE constraint") || 
+                            sqlEx.Message.Contains("FK_OrderItems_Products_ProductId"))
+                        {
+                            isForeignKeyError = true;
+                            break;
+                        }
+                    }
+                    
+                    exception = exception.InnerException;
+                }
+                
+                if (isForeignKeyError)
+                {
+                    TempData["ErrorMessage"] = "Cannot delete product that is referenced in existing orders.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = $"An error occurred while deleting the product: {dbEx.Message}";
+                }
+            }
+            catch (SqlException sqlEx)
+            {
+                if (sqlEx.Number == 547 || 
+                    sqlEx.Message.Contains("REFERENCE constraint") || 
+                    sqlEx.Message.Contains("FK_OrderItems_Products_ProductId"))
+                {
+                    TempData["ErrorMessage"] = "Cannot delete product that is referenced in existing orders.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = $"Database error: {sqlEx.Message}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

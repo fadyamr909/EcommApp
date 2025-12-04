@@ -11,6 +11,7 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 - **ORM**: Entity Framework Core 10.0
 - **Frontend**: Bootstrap 5, Razor Views, Bootstrap Icons
 - **Session Management**: In-memory session storage for shopping cart
+- **Authentication**: JWT (JSON Web Tokens) for API authentication
 - **UI/UX**: Modern, responsive design with enhanced styling and animations
 
 ## Features
@@ -25,6 +26,7 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 
 ### Storefront
 - **Product Catalog**: Grid view of all available products with hover effects
+- **Category Filtering**: Filter products by category using dropdown selector
 - **Product Details**: Detailed product view with image and description
 - **Shopping Cart**: Session-based shopping cart with:
   - Add items to cart (stays on store page for continued shopping)
@@ -42,19 +44,35 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 - **Order History**: Orders stored in database with order items (persistent storage)
 - **Transaction Safety**: Database transactions ensure all-or-nothing order creation
 
+### REST API
+- **JWT Authentication**: Secure API access with JSON Web Tokens
+- **User Registration & Login**: API endpoints for user management
+- **Products API**: Full CRUD operations for products (with category filtering)
+- **Cart API**: Shopping cart management via API
+- **Orders API**: Order placement and retrieval via API
+- **Authorization**: Protected endpoints require valid JWT token
+
 ## Project Structure
 
 ```
 EcommerceApp/
 ├── Controllers/
 │   ├── HomeController.cs
-│   ├── ProductsController.cs    # Admin product management
+│   ├── ProductsController.cs    # Admin product management (MVC)
 │   ├── StoreController.cs         # Customer storefront
-│   └── OrdersController.cs        # Order processing
+│   ├── OrdersController.cs        # Order processing
+│   └── Api/                       # REST API Controllers
+│       ├── AuthController.cs      # User registration & login
+│       ├── ProductsApiController.cs # Products CRUD API
+│       ├── CartApiController.cs    # Cart management API
+│       └── OrdersApiController.cs  # Orders API
 ├── Models/
 │   ├── Product.cs
 │   ├── Order.cs
-│   └── OrderItem.cs
+│   ├── OrderItem.cs
+│   ├── User.cs                    # User model for API auth
+│   ├── LoginRequest.cs            # API DTO
+│   └── RegisterRequest.cs         # API DTO
 ├── ViewModels/
 │   ├── CartItemViewModel.cs
 │   └── OrderViewModel.cs
@@ -62,7 +80,9 @@ EcommerceApp/
 │   ├── ICartService.cs
 │   ├── CartService.cs             # Session-based cart management
 │   ├── IOrderService.cs
-│   └── OrderService.cs            # Order creation and retrieval
+│   ├── OrderService.cs            # Order creation and retrieval
+│   ├── IJwtService.cs
+│   └── JwtService.cs             # JWT token generation
 ├── ViewComponents/
 │   └── CartCountViewComponent.cs  # Cart badge in navigation
 ├── Data/
@@ -75,7 +95,9 @@ EcommerceApp/
 ├── wwwroot/
 │   └── images/
 │       └── products/              # Uploaded product images
-└── Migrations/                    # EF Core migrations
+├── Migrations/                    # EF Core migrations
+└── SQL/
+    └── schema.sql                 # Database schema script
 ```
 
 ## Architecture
@@ -118,6 +140,12 @@ The application follows a layered architecture:
 - `PriceAtPurchase` (decimal, Required) - Stores price at time of purchase
 - `Quantity` (int, Required)
 
+### Users Table
+- `Id` (int, Primary Key)
+- `Username` (string, Required) - User login name
+- `PasswordHash` (string, Required) - Hashed password (SHA256)
+- `Email` (string, Required) - User email address
+
 ## How to Run the Project
 
 ### Prerequisites
@@ -153,10 +181,11 @@ The application follows a layered architecture:
 5. **Access the Application**
    - Open browser to `http://localhost:5079` (or the port shown in console)
    - Navigate to:
-     - **Store**: `/Store` - Browse products
+     - **Store**: `/Store` - Browse products (with category filtering)
      - **Cart**: `/Store/Cart` - View shopping cart
      - **Admin → Products**: `/Products` - Manage products
      - **Admin → Orders**: `/Orders` - View all orders
+   - **API Endpoints**: Available at `/api/*` (see API section below)
 
 ## How to Apply Migrations
 
@@ -205,6 +234,112 @@ The application implements **Option A: Add 10% Tax** to the cart subtotal.
 
 To change the pricing logic, modify the `CreateOrderAsync` method in `Services/OrderService.cs`.
 
+## REST API
+
+The application provides a RESTful API for external clients (mobile apps, Postman, etc.). All API endpoints are prefixed with `/api`.
+
+### Authentication
+
+**Base URL**: `http://localhost:5079/api`
+
+#### Register User
+- **Endpoint**: `POST /api/auth/register`
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "username": "john_doe",
+    "password": "password123",
+    "email": "john@example.com"
+  }
+  ```
+- **Response**: `200 OK` with user data
+
+#### Login
+- **Endpoint**: `POST /api/auth/login`
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "username": "john_doe",
+    "password": "password123"
+  }
+  ```
+- **Response**: `200 OK` with JWT token
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "username": "john_doe"
+  }
+  ```
+
+### Products API
+
+#### Get All Products
+- **Endpoint**: `GET /api/products`
+- **Auth Required**: No
+- **Query Parameters**: 
+  - `category` (optional) - Filter by category (e.g., `?category=Electronics`)
+- **Response**: Array of products
+
+#### Get Single Product
+- **Endpoint**: `GET /api/products/{id}`
+- **Auth Required**: No
+- **Response**: Product object
+
+#### Create Product
+- **Endpoint**: `POST /api/products`
+- **Auth Required**: Yes (Bearer token)
+- **Request Body**: Product object (Name, Description, Price, Category, ImageUrl)
+- **Response**: Created product
+
+#### Update Product
+- **Endpoint**: `PUT /api/products/{id}`
+- **Auth Required**: Yes (Bearer token)
+- **Request Body**: Product object (without Id)
+- **Response**: `204 No Content`
+
+#### Delete Product
+- **Endpoint**: `DELETE /api/products/{id}`
+- **Auth Required**: Yes (Bearer token)
+- **Response**: `204 No Content` or `400 Bad Request` if product is referenced in orders
+
+### Cart API
+
+All cart endpoints require authentication (Bearer token).
+
+- **Get Cart**: `GET /api/cart`
+- **Add to Cart**: `POST /api/cart/add` (Body: `{ "productId": 1, "quantity": 2 }`)
+- **Update Cart Item**: `PUT /api/cart/update` (Body: `{ "productId": 1, "quantity": 3 }`)
+- **Remove from Cart**: `DELETE /api/cart/remove/{productId}`
+- **Clear Cart**: `POST /api/cart/clear`
+
+### Orders API
+
+All orders endpoints require authentication (Bearer token).
+
+- **Place Order**: `POST /api/orders/place`
+- **Get All Orders**: `GET /api/orders`
+- **Get Single Order**: `GET /api/orders/{id}`
+
+### Using the API
+
+1. **Register/Login** to get a JWT token
+2. **Include token** in Authorization header: `Authorization: Bearer {token}`
+3. **Make requests** to protected endpoints with the token
+
+Example with curl:
+```bash
+# Login
+curl -X POST http://localhost:5079/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john_doe","password":"password123"}'
+
+# Use token in subsequent requests
+curl -X GET http://localhost:5079/api/products \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
 ## Features Summary
 
 ### Admin Features
@@ -218,6 +353,7 @@ To change the pricing logic, modify the `CreateOrderAsync` method in `Services/O
 
 ### Customer Features
 - ✅ Browse product catalog (grid view)
+- ✅ Filter products by category
 - ✅ View product details
 - ✅ Add products to shopping cart (stays on store page)
 - ✅ Update cart item quantities
@@ -237,6 +373,10 @@ To change the pricing logic, modify the `CreateOrderAsync` method in `Services/O
 - ✅ Database transaction support for order creation
 - ✅ Enhanced UI with hover effects and animations
 - ✅ Admin dropdown navigation menu
+- ✅ REST API with JWT authentication
+- ✅ Category-based product filtering
+- ✅ Foreign key constraint handling
+- ✅ Comprehensive error handling
 
 ## Assumptions
 
@@ -244,7 +384,9 @@ To change the pricing logic, modify the `CreateOrderAsync` method in `Services/O
 2. **Image Storage**: Uploaded images stored in `wwwroot/images/products/` directory
 3. **Pricing Logic**: 10% tax applied to cart subtotal (as specified in requirements)
 4. **Order Items**: Product prices are stored at purchase time (`PriceAtPurchase`) to preserve historical pricing
-5. **No Authentication**: Admin and customer features are accessible without login (for simplicity)
+5. **MVC Authentication**: Admin and customer MVC features are accessible without login (for simplicity)
+6. **API Authentication**: REST API endpoints require JWT authentication (except public endpoints like GetProducts)
+7. **Category Filtering**: Case-insensitive category filtering available in both MVC storefront and API
 
 ## UI/UX Features
 
@@ -258,10 +400,9 @@ To change the pricing logic, modify the `CreateOrderAsync` method in `Services/O
 
 ## Future Enhancements (Optional)
 
-- User authentication and authorization
+- User authentication and authorization for MVC views (currently only API has auth)
 - Order history page for individual customers
-- Product search and filtering
-- Category-based product filtering
+- Product search functionality
 - Pagination for product and order listings
 - Order status tracking (Pending, Shipped, Delivered)
 - Email notifications for order confirmations
@@ -269,6 +410,8 @@ To change the pricing logic, modify the `CreateOrderAsync` method in `Services/O
 - Product reviews and ratings
 - Order export (PDF, CSV)
 - Sales analytics and reporting
+- API rate limiting
+- Swagger/OpenAPI documentation
 
 ## License
 

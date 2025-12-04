@@ -60,7 +60,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   background-color: var(--background);
   color: var(--foreground);
-  margin-bottom: 60px;
+  margin-bottom: 0;
   line-height: 1.6;
 }
 
@@ -289,11 +289,11 @@ img {
 }
 
 /* Footer - Modern Design */
-footer {
+footer.footer {
     margin-top: auto;
-    border-top: 1px solid var(--border);
-    background-color: var(--background);
-    padding: 2rem 0;
+    border-top: none;
+    background-color: #252525;
+    padding: 40px 0 20px;
 }
 
 footer p {

@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Store";
+
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    string? selectedCategory = ViewBag.SelectedCategory as string;
 }
 
 <div class="page-header">
@@ -11,6 +14,28 @@
         <span class="count-badge">@Model.Count() items</span>
     }
 </div>
+
+@if (categories.Any())
+{
+    <form asp-action="Index" method="get" class="mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label for="categoryFilter" class="col-form-label fw-semibold">Category:</label>
+            </div>
+            <div class="col-auto">
+                <select id="categoryFilter" name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    @foreach (var cat in categories)
+                    {
+                        var isSelected = !string.IsNullOrEmpty(selectedCategory) &&
+                                         string.Equals(selectedCategory.Trim(), cat, StringComparison.OrdinalIgnoreCase);
+                        <option value="@cat" selected="@(isSelected ? "selected" : null)">@cat</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </form>
+}
 
 @if (TempData["SuccessMessage"] != null)
 {
@@ -67,4 +92,3 @@ else
         }
     </div>
 }
-
