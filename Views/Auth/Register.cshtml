@@ -18,8 +18,9 @@
                     </div>
                 }
 
-                <form asp-action="Register" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <form action="/Auth/Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     
                     <div class="mb-3">
                         <label asp-for="Username" class="form-label">Username</label>
@@ -46,7 +47,7 @@
 
                 <div class="text-center mt-4">
                     <p class="mb-0">Already have an account? 
-                        <a asp-action="Login" class="text-decoration-none">Login here</a>
+                        <a href="/Auth/Login" class="text-decoration-none">Login here</a>
                     </p>
                 </div>
             </div>

@@ -11,7 +11,9 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 - **ORM**: Entity Framework Core 10.0
 - **Frontend**: Bootstrap 5, Razor Views, Bootstrap Icons
 - **Session Management**: In-memory session storage for shopping cart
-- **Authentication**: JWT (JSON Web Tokens) for API authentication
+- **Authentication**: 
+  - Cookie-based authentication for MVC (browser-based login/register)
+  - JWT (JSON Web Tokens) for API authentication
 - **UI/UX**: Modern, responsive design with enhanced styling and animations
 
 ## Features
@@ -23,6 +25,21 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 - **Product Listing**: View all products in a table with images and actions
 - **Order Management**: View all orders with details, item counts, and totals
 - **Admin Navigation**: Dropdown menu for easy access to Products and Orders
+
+### User Authentication (MVC)
+- **User Registration**: 
+  - Registration form with validation (username, email, password)
+  - Duplicate username/email checking
+  - Password hashing (SHA256)
+  - Automatic login after registration
+- **User Login**: 
+  - Secure login with username and password
+  - Password verification
+  - Cookie-based authentication
+  - Session management
+- **User Logout**: Secure logout with session clearing
+- **Protected Routes**: Automatic redirect to login for protected pages
+- **User Session**: 30-minute session timeout with cookie expiration
 
 ### Storefront
 - **Product Catalog**: Grid view of all available products with hover effects
@@ -58,11 +75,12 @@ This is a full-featured e-commerce web application built with ASP.NET Core MVC. 
 EcommerceApp/
 ├── Controllers/
 │   ├── HomeController.cs
-│   ├── ProductsController.cs    # Admin product management (MVC)
+│   ├── AuthController.cs         # MVC user authentication (login/register)
+│   ├── ProductsController.cs      # Admin product management (MVC)
 │   ├── StoreController.cs         # Customer storefront
 │   ├── OrdersController.cs        # Order processing
 │   └── Api/                       # REST API Controllers
-│       ├── AuthController.cs      # User registration & login
+│       ├── AuthController.cs      # API user registration & login (JWT)
 │       ├── ProductsApiController.cs # Products CRUD API
 │       ├── CartApiController.cs    # Cart management API
 │       └── OrdersApiController.cs  # Orders API
@@ -88,6 +106,7 @@ EcommerceApp/
 ├── Data/
 │   └── ApplicationDbContext.cs     # EF Core DbContext
 ├── Views/
+│   ├── Auth/                      # Authentication views (Login, Register)
 │   ├── Products/                  # Admin product views
 │   ├── Store/                     # Storefront views
 │   ├── Orders/                    # Order views
@@ -181,6 +200,8 @@ The application follows a layered architecture:
 5. **Access the Application**
    - Open browser to `http://localhost:5079` (or the port shown in console)
    - Navigate to:
+     - **Login**: `/Auth/Login` - User login page
+     - **Register**: `/Auth/Register` - User registration page
      - **Store**: `/Store` - Browse products (with category filtering)
      - **Cart**: `/Store/Cart` - View shopping cart
      - **Admin → Products**: `/Products` - Manage products
@@ -233,6 +254,41 @@ The application implements **Option A: Add 10% Tax** to the cart subtotal.
   ```
 
 To change the pricing logic, modify the `CreateOrderAsync` method in `Services/OrderService.cs`.
+
+## User Authentication (MVC)
+
+The application provides both MVC-based authentication (for browser users) and API-based authentication (for external clients).
+
+### MVC Authentication (Browser)
+
+**Login Page**: `http://localhost:5079/Auth/Login`
+- Username and password login
+- Cookie-based authentication
+- 30-minute session timeout
+- Automatic redirect to Store after login
+
+**Registration Page**: `http://localhost:5079/Auth/Register`
+- User registration with:
+  - Username (3-50 characters, unique)
+  - Email (valid format, unique)
+  - Password (minimum 6 characters)
+- Password hashing (SHA256)
+- Duplicate username/email validation
+- Automatic login after successful registration
+
+**Security Features**:
+- CSRF protection with anti-forgery tokens
+- Password hashing before storage
+- Encrypted authentication cookies
+- Session management
+- Input validation
+
+**Authentication Flow**:
+1. User registers/logs in via MVC pages
+2. Password is hashed and stored in database
+3. Authentication cookie is created with user claims
+4. User session is established (30 minutes)
+5. Protected routes automatically redirect to login if not authenticated
 
 ## REST API
 
@@ -352,6 +408,11 @@ curl -X GET http://localhost:5079/api/products \
 - ✅ Access orders list with item counts and totals
 
 ### Customer Features
+- ✅ User registration with validation
+- ✅ Secure login with password hashing
+- ✅ User logout functionality
+- ✅ Cookie-based authentication
+- ✅ Session management (30-minute timeout)
 - ✅ Browse product catalog (grid view)
 - ✅ Filter products by category
 - ✅ View product details
@@ -363,12 +424,18 @@ curl -X GET http://localhost:5079/api/products \
 - ✅ View order confirmation with detailed breakdown
 
 ### Technical Features
+- ✅ Cookie-based authentication for MVC
+- ✅ JWT authentication for API
+- ✅ Password hashing (SHA256)
+- ✅ CSRF protection with anti-forgery tokens
 - ✅ Session-based shopping cart
+- ✅ Session-based user authentication
 - ✅ Image file upload and storage
 - ✅ Entity Framework Core migrations
 - ✅ Responsive Bootstrap UI with modern design
 - ✅ Bootstrap Icons for enhanced visual elements
 - ✅ Cart item count badge in navigation
+- ✅ User authentication in navigation menu
 - ✅ Order history in database
 - ✅ Database transaction support for order creation
 - ✅ Enhanced UI with hover effects and animations
@@ -377,6 +444,7 @@ curl -X GET http://localhost:5079/api/products \
 - ✅ Category-based product filtering
 - ✅ Foreign key constraint handling
 - ✅ Comprehensive error handling
+- ✅ Input validation with data annotations
 
 ## Assumptions
 
@@ -384,9 +452,13 @@ curl -X GET http://localhost:5079/api/products \
 2. **Image Storage**: Uploaded images stored in `wwwroot/images/products/` directory
 3. **Pricing Logic**: 10% tax applied to cart subtotal (as specified in requirements)
 4. **Order Items**: Product prices are stored at purchase time (`PriceAtPurchase`) to preserve historical pricing
-5. **MVC Authentication**: Admin and customer MVC features are accessible without login (for simplicity)
+5. **MVC Authentication**: 
+   - User registration and login available via `/Auth/Login` and `/Auth/Register`
+   - Cookie-based authentication with 30-minute session timeout
+   - Protected routes redirect to login page if not authenticated
 6. **API Authentication**: REST API endpoints require JWT authentication (except public endpoints like GetProducts)
 7. **Category Filtering**: Case-insensitive category filtering available in both MVC storefront and API
+8. **Password Security**: Passwords are hashed using SHA256 before storage (consider upgrading to bcrypt/PBKDF2 for production)
 
 ## UI/UX Features
 
@@ -400,8 +472,11 @@ curl -X GET http://localhost:5079/api/products \
 
 ## Future Enhancements (Optional)
 
-- User authentication and authorization for MVC views (currently only API has auth)
+- Upgrade password hashing to bcrypt or PBKDF2 for enhanced security
+- Role-based authorization (Admin, Customer roles)
 - Order history page for individual customers
+- Password reset functionality
+- Email verification for registration
 - Product search functionality
 - Pagination for product and order listings
 - Order status tracking (Pending, Shipped, Delivered)

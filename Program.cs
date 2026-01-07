@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ECommerceApp.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -36,11 +37,19 @@ builder.Services.AddScoped<ECommerceApp.Services.ICartService, ECommerceApp.Serv
 builder.Services.AddScoped<ECommerceApp.Services.IOrderService, ECommerceApp.Services.OrderService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
-// Add JWT Authentication
+// Add Authentication - Cookie for MVC, JWT for API
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = "Cookies";
+    options.DefaultSignInScheme = "Cookies";
+    options.DefaultChallengeScheme = "Cookies";
+})
+.AddCookie("Cookies", options =>
+{
+    options.LoginPath = "/Auth/Login";
+    options.LogoutPath = "/Auth/Logout";
+    options.AccessDeniedPath = "/Home/Error";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 })
 .AddJwtBearer(options =>
 {
@@ -76,6 +85,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+// Enable attribute routing for API controllers (must be before default route)
+app.MapControllers();
+
+// Explicit routes for Auth controller
+app.MapControllerRoute(
+    name: "auth",
+    pattern: "Auth/{action=Login}",
+    defaults: new { controller = "Auth" });
 
 app.MapControllerRoute(
     name: "default",

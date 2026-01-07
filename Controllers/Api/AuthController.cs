@@ -10,6 +10,7 @@ namespace ECommerceApp.Controllers.Api
 {
     [ApiController]
     [Route("api/auth")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -19,6 +20,13 @@ namespace ECommerceApp.Controllers.Api
         {
             _context = context;
             _jwtService = jwtService;
+        }
+
+        // GET endpoint for testing routing
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "API routing is working!", endpoint = "/api/auth/test" });
         }
 
         [HttpPost("register")]

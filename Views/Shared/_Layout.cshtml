@@ -41,7 +41,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                     <li>
-                                        <a class="dropdown-item" asp-controller="Auth" asp-action="Logout">
+                                        <a class="dropdown-item" href="/Auth/Logout">
                                             <i class="bi bi-box-arrow-right"></i> Logout
                                         </a>
                                     </li>
@@ -51,12 +51,12 @@
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Auth" asp-action="Login">
+                                <a class="nav-link" href="/Auth/Login">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Auth" asp-action="Register">
+                                <a class="nav-link" href="/Auth/Register">
                                     <i class="bi bi-person-plus"></i> Sign Up
                                 </a>
                             </li>
