@@ -2,12 +2,13 @@ using ECommerceApp.Services;
 using ECommerceApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace ECommerceApp.Controllers.Api
 {
     [ApiController]
     [Route("api/orders")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class OrdersApiController : ControllerBase
     {
         private readonly IOrderService _orderService;
